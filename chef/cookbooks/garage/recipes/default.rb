@@ -18,6 +18,13 @@ bash "install cask" do
   not_if 'test -e /home/vagrant/.cask'
 end
 
+bash "install docker" do
+  code <<-EOT
+    curl -fsSL get.docker.com | sudo sh -
+  EOT
+  not_if 'test -e /usr/bin/docker'
+end
+
 template '/home/vagrant/.zshrc' do
   owner 'vagrant'
   group 'vagrant'
