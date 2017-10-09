@@ -1,0 +1,28 @@
+(setq inhibit-startup-screen t)
+(global-set-key "\C-h" 'delete-backward-char)
+
+
+(setq-default show-trailing-whitespace t)
+(defun my-end-of-line ()
+  (interactive)
+  (end-of-line)
+  (if (eq last-command this-command)
+      (delete-horizontal-space)))
+(global-set-key "\C-e" 'my-end-of-line)
+
+
+(require 'cask "~/.cask/cask.el")
+(cask-initialize)
+
+
+(desktop-save-mode 1)
+
+(ido-mode 1)
+(ido-everywhere 1)
+(setq ido-enable-flex-matching t)
+
+(global-set-key (kbd "C-M-h")  'windmove-left)
+(global-set-key (kbd "C-M-l") 'windmove-right)
+(global-set-key (kbd "C-M-k")    'windmove-up)
+(global-set-key (kbd "C-M-j")  'windmove-down)
+
