@@ -1,7 +1,11 @@
 (setq inhibit-startup-screen t)
+(menu-bar-mode 0)
+(tool-bar-mode 0)
+(scroll-bar-mode 0)
+(setq make-backup-files nil)
 (global-set-key "\C-h" 'delete-backward-char)
 
-
+(global-linum-mode 1)
 (setq-default show-trailing-whitespace t)
 (defun my-end-of-line ()
   (interactive)
@@ -9,6 +13,18 @@
   (if (eq last-command this-command)
       (delete-horizontal-space)))
 (global-set-key "\C-e" 'my-end-of-line)
+
+(setq load-prefer-newer t
+      package-enable-at-startup nil
+      package-archives
+      '(("gnu" . "https://elpa.gnu.org/packages/")
+        ("org" . "http://orgmode.org/elpa/")
+        ("melpa" . "https://melpa.org/packages/")))
+(package-initialize)
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
 
 (require 'cask "~/.cask/cask.el")
@@ -21,8 +37,57 @@
 (ido-everywhere 1)
 (setq ido-enable-flex-matching t)
 
+(defun my/ido-recentf ()
+  (interactive)
+  (find-file (ido-completing-read "Find recent file: " recentf-list)))
+
+(use-package recentf
+  :config
+  (setq recentf-max-saved-items 2000) ;; 2000ファイルまで履歴保存する
+  (setq recentf-auto-cleanup 'never)  ;; 存在しないファイルは消さない
+  (setq recentf-exclude '("/recentf" "COMMIT_EDITMSG" "/.?TAGS" "^/sudo:" "/\\.emacs\\.d/games/*-scores" "/\\.emacs\\.d/\\.cask/"))
+  (setq recentf-auto-save-timer (run-with-idle-timer 30 t 'recentf-save-list))
+  (recentf-mode 1)
+  (bind-key "C-x C-r" 'my/ido-recentf)
+  )
+
+(use-package ido-completing-read+
+  :config
+  (ido-ubiquitous-mode 1))
+
+(use-package ido-vertical-mode
+  :config
+  (setq ido-vertical-define-keys 'C-n-and-C-p-only)
+  (ido-vertical-mode 1))
+
+(use-package smex
+             :config
+             (global-set-key (kbd "M-x") 'smex)
+             (global-set-key (kbd "M-X") 'smex-major-mode-commands))
+
 (global-set-key (kbd "C-M-h")  'windmove-left)
 (global-set-key (kbd "C-M-l") 'windmove-right)
 (global-set-key (kbd "C-M-k")    'windmove-up)
 (global-set-key (kbd "C-M-j")  'windmove-down)
 
+(ac-config-default)
+
+(eval-after-load "go-mode"
+  '(progn
+     (require 'go-autocomplete)))
+
+(require 'go-eldoc)
+(add-hook 'go-mode-hook 'go-eldoc-setup)
+(add-hook 'go-mode-hook 'flycheck-mode)
+(set-face-attribute 'eldoc-highlight-function-argument nil
+                    :underline t :foreground "green"
+                    :weight 'bold)
+
+(add-hook 'go-mode-hook (lambda ()
+                          (setq gofmt-command "goimports")
+                          (add-hook 'before-save-hook 'gofmt-before-save)
+                          (set (make-local-variable 'compile-command)
+                               "go build -v && go test -v && go vet")
+                          (local-set-key (kbd "M-.") 'godef-jump))
+                          (go-eldoc-setup)
+          )

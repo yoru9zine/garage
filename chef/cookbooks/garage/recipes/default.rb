@@ -31,6 +31,12 @@ template '/home/vagrant/.zshrc' do
   mode '0644'
 end
 
+template '/home/vagrant/.gitconfig' do
+  owner 'vagrant'
+  group 'vagrant'
+  mode '0644'
+end
+
 directory '/home/vagrant/.emacs.d' do
   owner 'vagrant'
   group 'vagrant'
@@ -64,4 +70,41 @@ git '/home/vagrant/.anyenv' do
   repository 'https://github.com/riywo/anyenv'
   revision 'master'
   action :sync
+  notifies :run, 'script[goenv-setup]', :immediately
 end
+
+script "goenv-setup" do
+  environment ({ 'HOME' => ::Dir.home('vagrant'), 'USER' => 'vagrant' })
+  user 'vagrant'
+  interpreter "zsh"
+  code <<-EOT
+    source ~/.zshrc
+    anyenv install goenv
+    source ~/.zshrc
+    goenv install 1.9.1
+    goenv global 1.9.1
+  EOT
+  action :nothing
+  notifies :run, 'script[golang-setup]', :immediately
+end
+
+script "golang-setup" do
+  environment ({ 'HOME' => ::Dir.home('vagrant'), 'USER' => 'vagrant' })
+  user 'vagrant'
+  interpreter "zsh"
+  code <<-EOT
+    source ~/.zshrc
+    mkdir -p ~/local/bin
+    go get -u github.com/nsf/gocode
+    go get -u github.com/rogpeppe/godef
+    go get -u golang.org/x/tools/cmd/guru
+    go get -u golang.org/x/tools/cmd/gorename
+    go get -u golang.org/x/tools/cmd/goimports
+    go get -u github.com/alecthomas/gometalinter
+    gometalinter --install --update
+    go get -u github.com/motemen/ghq
+    curl -s -L https://github.com/peco/peco/releases/download/v0.5.1/peco_linux_amd64.tar.gz|tar zxvf - && mv -f peco_linux_amd64/peco ~/local/bin && rm -rf ./peco_linux_amd64
+  EOT
+  action :nothing
+end
+
